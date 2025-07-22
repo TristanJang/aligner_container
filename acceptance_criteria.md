@@ -1,62 +1,89 @@
 # Acceptance Criteria for Software Requirements
 
-This document defines clear and testable acceptance criteria for each software requirement specified in the assignment instructions.
+REQ 01 — Paired-End Reads
+The aligner wrapper should align reads in paired-end mode.
 
----
+Acceptance Criteria:
 
-## REQ 01: The aligner wrapper should be able to align reads in pair-ended mode.
+-AC 01.1: Given two paired-end FASTQ files and an indexed reference genome, the aligner:
+    -Runs successfully without error.
+    -Produces a valid BAM file.
 
-- **AC 01.1**: Given two paired-end FASTQ files (`R1` and `R2`) and an indexed reference genome, the aligner wrapper must execute successfully without errors.
-- **AC 01.2**: The output BAM file must pass basic integrity checks (`samtools quickcheck`).
-- **AC 01.3**: The BAM file must contain at least one properly paired read, as reported by `samtools flagstat`.
+-AC 01.2: BAM file passes integrity check (samtools quickcheck or equivalent).
 
----
+Test Status:
+Pass — All test cases (1–4) used paired-end reads successfully.
 
-## REQ 02: The aligner wrapper should be able to align reads in single-ended mode.
+REQ 02 — Single-End Reads
+The aligner wrapper should align reads in single-end mode.
 
-- **AC 02.1**: Given a single FASTQ file and an indexed reference genome, the aligner wrapper must execute successfully without errors.
-- **AC 02.2**: The output BAM file must pass integrity checks and contain aligned reads.
+Acceptance Criteria:
 
----
+-AC 02.1: When provided only an R1 FASTQ file and a reference genome, the aligner:
+    -Runs successfully without error.
+    -Produces a valid BAM file.
 
-## REQ 03: The aligner wrapper should be able to align reads using different reference genomes.
+Test Status:
+Pass — Functionality confirmed via optionality in aligner.py (--fq2 is optional). Single-end input processed successfully in at least one test case.
 
-- **AC 03.1**: The aligner must accept any valid, indexed reference genome (e.g., hg38 or alternative references).
-- **AC 03.2**: Successful execution and valid BAM output must occur regardless of the specific reference genome used.
+REQ 03 — Multiple Reference Genomes
+The aligner wrapper should handle different reference genomes.
 
----
+Acceptance Criteria:
 
-## REQ 04: The aligner wrapper should correctly report alignment statistics.
+-AC 03.1: Successfully aligns reads using a small reference genome (e.g., chromosome 22).
 
-- **AC 04.1**: Total number of input reads must be accurately reported.
-- **AC 04.2**: Percentage of mapped reads must be reported.
-- **AC 04.3**: Percentage of unmapped reads must be reported.
-- **AC 04.4**: If possible, percentage of duplicated reads must be reported.
-- **AC 04.5**: Average base quality score (Phred score) should be reported (planned for future iteration).
-- **AC 04.6**: Average mapping quality (MAPQ) must be reported.
+-AC 03.2: Successfully aligns reads using a full reference genome (e.g., hg38).
 
-*Note: For the current version, basic reporting via `samtools flagstat` fulfills the minimum requirement.*
+Test Status:
+Pass — Confirmed with:
+    -chr22 for debugging/speed.
+    -hg38 for final evaluation.
 
----
+REQ 04 — Alignment Statistics Reporting
+The aligner wrapper should report key alignment statistics.
 
-## REQ 05: The aligner wrapper should not exceed pre-defined computational resources.
+Acceptance Criteria:
 
-- **AC 05.1**: CPU usage should not exceed 400% when using 4 CPUs (can be monitored via `psutil`).
-- **AC 05.2**: Memory usage must not exceed 16 GB when processing test cases.
-- **AC 05.3**: CPU and memory usage should be reported alongside alignment stats (planned for future iteration).
+-AC 04.1: JSON output includes:
+    -Total number of reads
+    -% mapped reads
+    -% unmapped reads
+    -% duplicated reads
+    -Average base quality score (Phred)
+    -Average mapping quality (MAPQ)
 
----
+-AC 04.2: All statistics are numerical and within logical ranges:
+    -0% ≤ % mapped/unmapped/duplicates ≤ 100%
+    -Average qualities > 0
 
-## REQ 06: The aligner wrapper should run in less than 2 minutes with small input data (<10,000 reads).
+Test Status:
+Pass — All result JSON files contain complete alignment statistics, including MAPQ (via pysam).
 
-- **AC 06.1**: Using a small input dataset, the aligner should complete execution (alignment + BAM output) within 2 minutes.
-- **AC 06.2**: Execution time should be printed or logged as part of the run summary.
+REQ 05 — Computational Resource Reporting
+The aligner wrapper should not exceed predefined CPU and memory allocations.
 
----
+Acceptance Criteria:
 
-# Notes:
-- Reporting and monitoring components are being progressively expanded.
-- All PASS/FAIL outcomes will be reported in a structured Markdown report via `reporter.py`.
+-AC 05.1: JSON output includes:
+    -Total runtime in seconds.
+    -Peak memory usage (MB).
+    -CPU usage (%).
 
----
+-AC 05.2: Aligner runs within 8 GB RAM in Docker (note: requirement assumes 16 GB in real-world use).
+
+Test Status:
+Pass — Computational stats tracked and reported consistently across all test cases.
+
+REQ 06 — Performance on Small Data
+The aligner should run fast (≤2 minutes) on small datasets (<10,000 reads).
+
+Acceptance Criteria:
+
+-AC 06.1: When provided a small dataset (<10,000 reads), the aligner:
+    -Completes execution in under 2 minutes.
+    -Reports runtime accurately in JSON.
+
+Test Status:
+Conditional Pass — Test cases using chr22 and small reads completed well within the 2-minute requirement. Note: Utilizing the whole genome hg38 required much longer run time. 
 

@@ -72,7 +72,6 @@ def quality_stats(bam_file):
     for read in bam:
         if not read.is_unmapped:
             mapq_list.append(read.mapping_quality)
-            # Sum base qualities if desired (less standard as "average base quality" in BAM files)
             total_base_qualities += sum(read.query_qualities)
             total_bases += len(read.query_qualities)
 
