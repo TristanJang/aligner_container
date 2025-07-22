@@ -3,10 +3,13 @@
 # Use official lightweight Python image as base
 FROM python:3.10-slim
 
-# Install bwa and samtools
+# Install bwa, samtools and time
 RUN apt-get update && \
     apt-get install -y bwa samtools time && \
     apt-get clean
+#install 3rd party packages 
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Set working directory
 WORKDIR /app

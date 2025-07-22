@@ -4,6 +4,7 @@ import argparse
 import subprocess
 import time
 import json
+import pysam
 
 #define alignment command
 def run_bwa_mem(fq1, fq2, reference, output_bam):
@@ -60,19 +61,25 @@ def alignment_stats(bam_file):
     }
 
 def quality_stats(bam_file):
-    """Collect average base quality and average MAPQ using samtools stats."""
-    cmd = ["samtools", "stats", bam_file]
-    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-    lines = result.stdout.strip().split('\n')
+    """Compute average base quality and average MAPQ using pysam."""
 
-    avg_base_quality = None
-    avg_mapq = None
+    bam = pysam.AlignmentFile(bam_file, "rb")
 
-    for line in lines:
-        if "SN" in line and "average quality" in line:
-            avg_base_quality = float(line.strip().split()[-1])
-        if "SN" in line and "average mapping quality" in line:
-            avg_mapq = float(line.strip().split()[-1])
+    total_base_qualities = 0
+    total_bases = 0
+    mapq_list = []
+
+    for read in bam:
+        if not read.is_unmapped:
+            mapq_list.append(read.mapping_quality)
+            # Sum base qualities if desired (less standard as "average base quality" in BAM files)
+            total_base_qualities += sum(read.query_qualities)
+            total_bases += len(read.query_qualities)
+
+    bam.close()
+
+    avg_mapq = round(sum(mapq_list) / len(mapq_list), 2) if mapq_list else None
+    avg_base_quality = round(total_base_qualities / total_bases, 2) if total_bases else None
 
     return {
         "average_base_quality": avg_base_quality,

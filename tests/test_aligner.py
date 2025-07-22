@@ -1,34 +1,64 @@
+import subprocess
 import json
-import glob
+import os
 import pytest
 
-# === Acceptance Thresholds ===
-PERCENT_MAPPED_THRESHOLD = 10.0  # Example: >= 10% mapped reads
-RUNTIME_THRESHOLD_SECONDS = 600  # Example: ≤ 10 minutes
-PEAK_MEMORY_MB_THRESHOLD = 8000  # Example: ≤ 8 GB
+# Directory paths (adjust if needed)
+TEST_CASE_DIR = "/data/test_cases/"
+REFERENCE = "/data/Test_reference/hg38_chr22.fasta"
 
-# === Load JSON Output ===
-def load_results(json_path):
-    with open(json_path, "r") as f:
-        return json.load(f)
+# Acceptance thresholds (REQ 04)
+MIN_MAPPED_PERCENT = 95.0
+MAX_PERCENT_DUPLICATES = 10.0
 
-# === Collect All Result Files Automatically ===
-# Adjust this glob as needed based on your folder structure:
-result_files = glob.glob("*.json")
 
-@pytest.mark.parametrize("json_file", result_files)
-def test_alignment_requirements(json_file):
-    results = load_results(json_file)
+@pytest.mark.parametrize("case_number", [1, 2, 3, 4])
+def test_aligner_output_and_metrics(case_number):
+    """
+    Executes aligner on specified test case, then verifies:
+    - Output BAM and JSON files are created.
+    - % mapped reads exceeds threshold.
+    - Computational stats are present.
+    """
+
+    fq1 = os.path.join(TEST_CASE_DIR, f"test_case_{case_number}_R1.fastq.gz")
+    fq2 = os.path.join(TEST_CASE_DIR, f"test_case_{case_number}_R2.fastq.gz")
+    output_bam = f"/data/aligned_test_case_{case_number}.bam"
+        # Check if outputs already exist
+    output_json = output_bam.replace(".bam", "_results.json")
+
+    if not (os.path.isfile(output_bam) and os.path.isfile(output_json)):
+        # Run aligner.py only if output files are missing
+        subprocess.run([
+            "python", "/app/aligner/aligner.py",
+            "--fq1", fq1,
+            "--fq2", fq2,
+            "--ref", REFERENCE,
+            "--output", output_bam
+        ], check=True)
+    else:
+        pass
+
+    # Check if aligner output files exist
+    assert os.path.isfile(output_bam), f"BAM file missing for test case {case_number}"
+    assert os.path.isfile(output_json), f"Result JSON missing for test case {case_number}"
+
+    # Load JSON results
+    with open(output_json, "r") as f:
+        results = json.load(f)
+
+    # Verify alignment statistics (REQ 04)
     stats = results["alignment_stats"]
+    assert stats["percent_mapped"] >= MIN_MAPPED_PERCENT, \
+        f"Mapped reads below threshold in test case {case_number}"
+
+    assert stats["percent_duplicates"] <= MAX_PERCENT_DUPLICATES, \
+        f"Too many duplicate reads in test case {case_number}"
+
+    # Verify computational stats exist (REQ 05/06)
     comp_stats = results["computational_stats"]
+    assert "total_runtime_seconds" in comp_stats, "Missing runtime metric"
+    assert "peak_memory_MB" in comp_stats, "Missing memory metric"
+    assert "cpu_usage_percent" in comp_stats, "Missing CPU usage metric"
 
-    # === Alignment Quality Tests ===
-    assert stats["percent_mapped"] >= PERCENT_MAPPED_THRESHOLD, \
-        f"{json_file}: Percent mapped too low: {stats['percent_mapped']}%"
-
-    # === Computational Performance Tests ===
-    assert comp_stats["total_runtime_seconds"] <= RUNTIME_THRESHOLD_SECONDS, \
-        f"{json_file}: Runtime too long: {comp_stats['total_runtime_seconds']} seconds"
-
-    assert comp_stats["peak_memory_MB"] <= PEAK_MEMORY_MB_THRESHOLD, \
-        f"{json_file}: Peak memory usage too high: {comp_stats['peak_memory_MB']} MB"
+    print(f"Test case {case_number} PASSED.")
