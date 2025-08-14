@@ -1,8 +1,8 @@
-# Sophia Genetics Technical Assignment – Aligner Pipeline
+# Aligner Pipeline (Docker container)
 
 ## Overview
 
-This repository contains my submission for the Sophia Genetics technical assessment: a modular, containerized alignment pipeline using Python, BWA, and Samtools.
+This repository contains a modular, containerized alignment pipeline using Python, BWA, and Samtools.
 
 While creating this project, I worked with Docker containers and automated testing using pytest—both of which were new tools for me prior to this assignment. Successfully integrating them into a reproducible workflow was a valuable experience that I’m excited to build upon professionally.
 
