@@ -4,7 +4,7 @@
 
 This repository contains a modular, containerized alignment pipeline using Python, BWA, and Samtools.
 
-While creating this project, I worked with Docker containers and automated testing using pytest—both of which were new tools for me prior to this assignment. Successfully integrating them into a reproducible workflow was a valuable experience that I’m excited to build upon professionally.
+While creating this project, I worked with Docker containers and automated testing using pytest—both of which were new tools for me. Successfully integrating them into a reproducible workflow was a valuable experience that I’m excited to build upon.
 
 ---
 
@@ -63,7 +63,7 @@ python report/reporter.py
     #Output is /data/final_test_report.md
 
 
-
+```
 ##Input Format
 FASTQ Files: Paired-end or single-end (.fastq.gz)
 Reference Genome: FASTA (must be indexed via bwa index)
